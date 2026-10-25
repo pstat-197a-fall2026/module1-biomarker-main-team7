@@ -73,21 +73,27 @@ What I'm seeing is each protein has a primary distribution as well as some outli
 
 ### Question 2: Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of the outlying values. Are there specific subjects (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabulating the number of outlying values per subject.)
 
-To answer this question, I look at the raw distribution of all the subjects' levels of the randomly sampled 5 proteins. Then, I group by ASD vs ND and count the number of outliers for the proteins.
+To answer this question, I count, for each subject, in how many proteins they have an outlier value. Then, I group by ASD vs ND and count the number of outliers for the proteins.
 
 ```{r}
-for (protein in random_protein_sample) {
-  barplot(random_protein_sample_tibble[[protein]])
-  }
+proteins_only <- biomarker_clean_without_log_transform_outlier_trim %>% select(-c(group, ados))
+means <- colMeans(proteins_only , na.rm = TRUE)
+sds   <- sapply(proteins_only , sd, na.rm = TRUE)
+
+outliers_per_subject <- biomarker_clean_without_log_transform_outlier_trim  %>%
+  rowwise() %>%
+  mutate(outliers = sum(abs(c_across(names(proteins_only)) - means) > 3 * sds, na.rm = TRUE)) %>%
+  ungroup()
+
+barplot(outliers_per_subject$outliers)
 ```
-
-Based on the barcharts, I can see that for some of the proteins, there are definitely just a few individuals massively higher than the rest.
+I can see there are several individuals who have significant more outlier levels than the rest of the subjects.
 
 ```{r}
-proteins_by_group <- random_protein_sample_tibble %>%
+outliers_by_group <- outliers_per_subject %>%
   group_by(group) %>%
-  summarize(across(-ados, ~ length(boxplot.stats(.x)$out)))
-proteins_by_group
+  summarize(avg_outliers = mean(outliers), total_outliers = sum(outliers))
+outliers_by_group
 ```
 
 Based on these 5 proteins, the outliers don't really appear to be group dependent. This is a sign that trimming the outliers might be okay since it does not bias the data.

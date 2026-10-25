@@ -39,7 +39,7 @@ Summarize your findings here. I've included some subheaders in a way that seems 
 
 ### Impact of preprocessing and outliers
 
-Tasks 1-2
+A couple of important choices were made in the data preprocessing. These were: (1) log-transforming the data, and (2) trimming outliers. These transformations were performed because the several of the distributions of protein levels had very large outliers which would have skewed the analysis. Since these outliers did not appear to be dependent on ASD vs ND group membership, trimming outliers should not bias the data too much.
 
 ### Methodological variations
 

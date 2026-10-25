@@ -1,0 +1,93 @@
+# Questions 1 and 2 Draft Script (Stacy)
+
+This R Markdown file contains some basic work answering questions 1 and 2 in the README.md. The main analysis from this draft script should be adapted to fit into our group analysis script and the main takeaways should be adapted to fit the final report.
+
+Below is the original pre-processing script
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(glue)
+
+# get names
+var_names <- read_csv('../../data/biomarker-raw.csv', 
+                     col_names = F, 
+                     n_max = 2, 
+                     col_select = -(1:2)) %>%
+  t() %>%
+  as_tibble() %>%
+  rename(name = V1, 
+         abbreviation = V2) %>%
+  na.omit()
+
+# function for trimming outliers (good idea??)
+trim <- function(x, .at){
+  x[abs(x) > .at] <- sign(x[abs(x) > .at])*.at
+  return(x)
+}
+
+# read in data
+biomarker_clean <- read_csv('../../data/biomarker-raw.csv', 
+         skip = 2,
+         col_select = -2L,
+         col_names = c('group', 
+                       'empty',
+                       pull(var_names, abbreviation),
+                       'ados'),
+         na = c('-', '')) %>%
+  filter(!is.na(group)) %>%
+  # log transform, center and scale, and trim
+  mutate(across(.cols = -c(group, ados), 
+                ~ trim(scale(log10(.x))[, 1], .at = 3))) %>%
+  # reorder columns
+  select(group, ados, everything())
+```
+
+### Question 1: What do you imagine is the reason for log-transforming the protein levels in biomarker-raw.csv? (Hint: look at the distribution of the raw values for a sample of proteins.)
+
+To answer this question, I grab a random sample of 5 proteins, and take a look at their raw distribution.
+
+```{r}
+biomarker_clean_without_log_transform_outlier_trim <- read_csv('../../data/biomarker-raw.csv', 
+         skip = 2,
+         col_select = -2L,
+         col_names = c('group', 
+                       'empty',
+                       pull(var_names, abbreviation),
+                       'ados'),
+         na = c('-', '')) %>%
+  filter(!is.na(group)) %>%
+  select(group, ados, everything())
+
+set.seed(1)
+random_protein_sample <- sample(setdiff(names(biomarker_clean_without_log_transform_outlier_trim), c("group", "ados")), size = 5)
+
+random_protein_sample_tibble <- biomarker_clean_without_log_transform_outlier_trim |> 
+  select(c("group", "ados"), random_protein_sample)
+
+for (protein in random_protein_sample) {
+  hist(random_protein_sample_tibble[[protein]], main = glue("{protein} distribution"), xlab = glue("{protein} values")) }
+```
+
+What I'm seeing is each protein has a primary distribution as well as some outliers quite far away. So I believe the purpose of the log transform is to prevent these outliers from skewing the data.
+
+### Question 2: Temporarily remove the outlier trimming from preprocessing and do some exploratory analysis of the outlying values. Are there specific subjects (not values) that seem to be outliers? If so, are outliers more frequent in one group or the other? (Hint: consider tabulating the number of outlying values per subject.)
+
+To answer this question, I look at the raw distribution of all the subjects' levels of the randomly sampled 5 proteins. Then, I group by ASD vs ND and count the number of outliers for the proteins.
+
+```{r}
+for (protein in random_protein_sample) {
+  barplot(random_protein_sample_tibble[[protein]])
+  }
+```
+
+Based on the barcharts, I can see that for some of the proteins, there are definitely just a few individuals massively higher than the rest.
+
+```{r}
+proteins_by_group <- random_protein_sample_tibble %>%
+  group_by(group) %>%
+  summarize(across(-ados, ~ length(boxplot.stats(.x)$out)))
+proteins_by_group
+```
+
+Based on these 5 proteins, the outliers don't really appear to be group dependent. This is a sign that trimming the outliers might be okay since it does not bias the data.

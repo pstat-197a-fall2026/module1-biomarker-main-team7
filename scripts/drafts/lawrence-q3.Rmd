@@ -1,0 +1,151 @@
+---
+title: "lawrence-q3"
+output: html_document
+---
+
+# Initial Set Up
+
+```{r}
+# loading in libraries
+library(tidyverse)
+library(infer)
+library(randomForest)
+library(tidymodels)
+library(modelr)
+library(yardstick)
+set.seed(101422)
+```
+
+
+
+```{r}
+# loading in data
+load('../../data/biomarker-clean.RData')
+```
+
+## Splitting Data Into Training and Testing
+
+```{r}
+# splitting data
+split_biomarker_clean <- biomarker_clean %>%
+  initial_split(strata = group, prop = 0.75)
+
+train_biomarker_clean <- training(split_biomarker_clean)
+test_biomarker_clean <- testing(split_biomarker_clean)
+```
+
+# Multiple Testing
+
+```{r}
+# function to compute tests
+test_fn <- function(.df){
+  t_test(.df, 
+         formula = level ~ group,
+         order = c('ASD', 'TD'),
+         alternative = 'two-sided',
+         var.equal = F)
+}
+```
+
+```{r}
+ttests_out <- train_biomarker_clean %>%
+  # drop ADOS score
+  select(-ados) %>%
+  # arrange in long format
+  pivot_longer(-group, 
+               names_to = 'protein', 
+               values_to = 'level') %>%
+  # nest by protein
+  nest(data = c(level, group)) %>% 
+  # compute t tests
+  mutate(ttest = map(data, test_fn)) %>%
+  unnest(ttest) %>%
+  # sort by p-value
+  arrange(p_value) %>%
+  # multiple testing correction
+  mutate(m = n(),
+         hm = log(m) + 1/(2*m) - digamma(1),
+         rank = row_number(),
+         p.adj = m*hm*p_value/rank)
+```
+
+## Selecting 15 Predictive Proteins 
+
+```{r}
+# select significant proteins
+proteins_s1 <- ttests_out %>%
+  slice_min(p.adj, n = 15) %>%
+  pull(protein)
+```
+
+# Random Forest
+
+```{r}
+# store predictors and response separately
+predictors <- train_biomarker_clean %>%
+  select(-c(group, ados))
+
+response <- train_biomarker_clean %>% pull(group) %>% factor()
+```
+
+```{r}
+# fit RF
+rf_out <- randomForest(x = predictors, 
+                       y = response, 
+                       ntree = 1000, 
+                       importance = T)
+
+# check errors
+rf_out$confusion
+```
+
+## Selecting 15 Predictive Proteins 
+
+```{r}
+# compute importance scores
+proteins_s2 <- rf_out$importance %>% 
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  slice_max(MeanDecreaseGini, n = 15) %>%
+  pull(protein)
+```
+
+
+# Logistic Regression (INCOMPLETE)
+
+## NEEDS TO BE CHANGED TO FUZZY INTERSECTION
+
+```{r}
+# select subset of interest
+proteins_sstar <- intersect(proteins_s1, proteins_s2)
+```
+
+```{r}
+# preprocessing function
+prep_func <- function(.df){
+  .df %>%
+    select(group, any_of(proteins_sstar)) %>%
+    mutate(class = (group == 'ASD')) %>%
+    select(-group)
+}
+```
+
+```{r}
+# prep_func applied to train and test
+train_biomarker_sstar <- prep_func(train_biomarker_clean)
+test_biomarker_sstar <- prep_func(test_biomarker_clean)
+```
+
+```{r}
+fit <- glm(class ~ ., data = train_biomarker_sstar, family = 'binomial')
+```
+
+# Evaluating Accuracy 
+```{r}
+# evaluate errors on test set
+class_metrics <- metric_set(sensitivity, 
+                            specificity, 
+                            accuracy,
+                            roc_auc)
+```
+

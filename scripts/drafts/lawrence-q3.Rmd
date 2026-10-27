@@ -114,6 +114,7 @@ proteins_s2 <- rf_out$importance %>%
 # Logistic Regression (INCOMPLETE)
 
 ## NEEDS TO BE CHANGED TO FUZZY INTERSECTION
+fuzzy intersection: protein can be in proteins_s1 or proteins_s2
 
 ```{r}
 # select subset of interest

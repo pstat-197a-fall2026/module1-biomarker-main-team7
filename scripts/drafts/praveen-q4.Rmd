@@ -108,3 +108,51 @@ proteins_sstar <- intersect(proteins_s1, proteins_s2)
 proteins_sstar
 ```
 
+
+## Baseline: Logistic Regression and Evaluation
+
+The `class_metrics` code from class gives an error. The newer version of yardstick only takes column names for `truth` and `estimate`, not things like `factor(class)`, so we make those columns with `mutate` first and then pass the column names.
+
+```{r}
+# metrics to report
+class_metrics <- metric_set(sensitivity,
+                            specificity,
+                            accuracy,
+                            roc_auc)
+
+# make the factor columns first, then compute metrics
+eval_fn <- function(.df) {
+  .df %>%
+    mutate(truth = factor(class, levels = c(FALSE, TRUE)),
+           estimate = factor(pred > 0.5, levels = c(FALSE, TRUE))) %>%
+    class_metrics(truth = truth,
+                  estimate = estimate,
+                  pred,
+                  event_level = "second")
+}
+```
+
+Since we're going to fit a lot of logistic regressions, we made a function that takes a set of proteins, fits on the training data, and evaluates on the test data.
+
+```{r}
+fit_panel <- function(proteins) {
+  train_sub <- train_data %>%
+    select(group, all_of(proteins)) %>%
+    mutate(class = (group == "ASD")) %>%
+    select(-group)
+
+  test_sub <- test_data %>%
+    select(group, all_of(proteins)) %>%
+    mutate(class = (group == "ASD")) %>%
+    select(-group)
+
+  fit <- glm(class ~ ., data = train_sub, family = "binomial")
+
+  test_sub %>%
+    add_predictions(fit, type = "response") %>%
+    eval_fn()
+}
+
+baseline_metrics <- fit_panel(proteins_sstar)
+baseline_metrics
+```

@@ -193,3 +193,67 @@ smaller_panels <- tibble(n_proteins = 1:length(proteins_ordered)) %>%
 
 smaller_panels
 ```
+
+
+We don't want to use the test set to pick the panel size, so we use 5-fold cross validation on the training data instead. For each panel size, we fit the model on 4 folds, compute the AUC on the fold left out, and average over the 5 folds.
+
+```{r}
+# 5-fold cross validation on the training data
+set.seed(67)
+train_folds <- vfold_cv(train_data, v = 5, strata = group)
+
+# average cross validation AUC for the top k proteins
+cv_auc <- function(k) {
+  proteins <- proteins_ordered[1:k]
+
+  fold_auc <- map_dbl(train_folds$splits, function(.split) {
+    fold_train <- analysis(.split) %>%
+      select(group, all_of(proteins)) %>%
+      mutate(class = (group == "ASD")) %>%
+      select(-group)
+
+    fold_val <- assessment(.split) %>%
+      select(group, all_of(proteins)) %>%
+      mutate(class = (group == "ASD")) %>%
+      select(-group)
+
+    fit <- glm(class ~ ., data = fold_train, family = "binomial")
+
+    fold_val %>%
+      add_predictions(fit, type = "response") %>%
+      eval_fn() %>%
+      filter(.metric == "roc_auc") %>%
+      pull(.estimate)
+  })
+
+  mean(fold_auc)
+}
+
+cv_results <- tibble(n_proteins = 1:length(proteins_ordered)) %>%
+  mutate(cv_auc = map_dbl(n_proteins, cv_auc))
+
+cv_results
+```
+
+We pick the smallest panel whose cross validation AUC is within 0.05 of the best one, and then check it on the test set.
+
+```{r}
+n_simple <- cv_results %>%
+  filter(cv_auc >= max(cv_auc) - 0.05) %>%
+  slice_min(n_proteins, n = 1) %>%
+  pull(n_proteins)
+
+proteins_simple <- proteins_ordered[1:n_simple]
+proteins_simple
+
+simple_results <- smaller_panels %>%
+  filter(n_proteins == n_simple) %>%
+  mutate(method = "simpler panel",
+         proteins = paste(proteins_simple, collapse = ", ")) %>%
+  select(method, n_proteins, everything())
+
+simple_results
+```
+
+Cross validation picks a 3 protein panel (DERM, RELT, IgD). On the test set it gets an AUC of 0.766 and accuracy of 0.688, compared to 0.789 and 0.656 for the full 6 protein panel. So we can cut the panel in half and get about the same performance.
+

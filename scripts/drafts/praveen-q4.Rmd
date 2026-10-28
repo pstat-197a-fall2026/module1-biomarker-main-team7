@@ -6,6 +6,8 @@ This R Markdown file contains my work on question 4 in the README.md. The main a
 
 I try both: a simpler panel using fewer of the in-class proteins, and an alternative panel using LASSO logistic regression.
 
+## Load libraries and data
+
 ```{r}
 library(tidyverse)
 library(infer)
@@ -16,4 +18,18 @@ library(yardstick)
 library(glmnet)
 
 load("../../data/biomarker-clean.RData")
+```
+
+
+## Splitting Data Into Training and Testing
+
+To compare everything fairly, we set aside a test set at the very beginning and only use it for evaluating accuracy at the end.
+
+```{r}
+set.seed(67)
+biomarker_split <- biomarker_clean %>%
+  initial_split(prop = 0.8, strata = group)
+
+train_data <- training(biomarker_split)
+test_data <- testing(biomarker_split)
 ```

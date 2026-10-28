@@ -113,12 +113,12 @@ proteins_s2 <- rf_out$importance %>%
 
 # Logistic Regression (INCOMPLETE)
 
-## NEEDS TO BE CHANGED TO FUZZY INTERSECTION
-fuzzy intersection: protein can be in proteins_s1 or proteins_s2
+## Fuzzy Intersection
+fuzzy intersection: proteins in proteins_s1 or proteins_s2
 
 ```{r}
 # select subset of interest
-proteins_sstar <- intersect(proteins_s1, proteins_s2)
+proteins_sstar <- unique(c(proteins_s1, proteins_s2))
 ```
 
 ```{r}
@@ -142,11 +142,23 @@ fit <- glm(class ~ ., data = train_biomarker_sstar, family = 'binomial')
 ```
 
 # Evaluating Accuracy 
+
+## ERROR With class_metrics
+
+This error is yet to be fixed within the inclass-analysis.R as well.
+Waiting on Dr. Coburn to assess/fix the bug. 
+
 ```{r}
 # evaluate errors on test set
 class_metrics <- metric_set(sensitivity, 
                             specificity, 
                             accuracy,
                             roc_auc)
+
+test_biomarker_sstar %>% 
+  add_predictions(fit, type = 'response') %>%
+  class_metrics(estimate = factor(pred > 0.5),
+              truth = factor(class), pred,
+              event_level = 'second')
 ```
 

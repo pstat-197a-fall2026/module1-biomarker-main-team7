@@ -1,1 +1,19 @@
 # Question 4 Draft Script (Praveen)
+
+This R Markdown file contains my work on question 4 in the README.md. The main analysis from this draft script should be adapted to fit into our group analysis script and the main takeaways should be adapted to fit the final report.
+
+### Question 4: Use any method to find either a simpler panel that achieves comparable classification accuracy, or an alternative panel that achieves improved classification accuracy. Benchmark your results against the in-class analysis.
+
+I try both: a simpler panel using fewer of the in-class proteins, and an alternative panel using LASSO logistic regression.
+
+```{r}
+library(tidyverse)
+library(infer)
+library(randomForest)
+library(rsample)
+library(modelr)
+library(yardstick)
+library(glmnet)
+
+load("../../data/biomarker-clean.RData")
+```

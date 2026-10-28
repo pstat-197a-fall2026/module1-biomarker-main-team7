@@ -156,3 +156,40 @@ fit_panel <- function(proteins) {
 baseline_metrics <- fit_panel(proteins_sstar)
 baseline_metrics
 ```
+
+
+We save the baseline in one row so it's easy to compare against later.
+
+```{r}
+baseline_results <- baseline_metrics %>%
+  select(.metric, .estimate) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate) %>%
+  mutate(method = "in-class (hard intersection)",
+         n_proteins = length(proteins_sstar),
+         proteins = paste(proteins_sstar, collapse = ", ")) %>%
+  select(method, n_proteins, everything())
+
+baseline_results
+```
+
+
+## Simpler Panel
+
+To find a simpler panel, we order the baseline proteins by t-test p-value and fit a logistic regression for each panel size, adding one protein at a time until we reach the full panel.
+
+```{r}
+# order the baseline proteins by t-test p-value
+proteins_ordered <- ttests_out %>%
+  filter(protein %in% proteins_sstar) %>%
+  arrange(p_value) %>%
+  pull(protein)
+
+# fit models using the top 1, 2, ..., k proteins
+smaller_panels <- tibble(n_proteins = 1:length(proteins_ordered)) %>%
+  mutate(metrics = map(n_proteins, ~ fit_panel(proteins_ordered[1:.x]))) %>%
+  unnest(metrics) %>%
+  select(n_proteins, .metric, .estimate) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate)
+
+smaller_panels
+```

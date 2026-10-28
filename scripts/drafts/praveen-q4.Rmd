@@ -1,14 +1,19 @@
+---
+title: "praveen-q4"
+output: html_document
+---
+
 # Question 4 Draft Script (Praveen)
 
-This R Markdown file contains my work on question 4 in the README.md. The main analysis from this draft script should be adapted to fit into our group analysis script and the main takeaways should be adapted to fit the final report.
+This R Markdown file contains work on question 4. The main analysis from this script should be adapted to fit into our group analysis script, and the main takeaways should be adapted to fit the final report.
 
 ### Question 4: Use any method to find either a simpler panel that achieves comparable classification accuracy, or an alternative panel that achieves improved classification accuracy. Benchmark your results against the in-class analysis.
 
-I try both: a simpler panel using fewer of the in-class proteins, and an alternative panel using LASSO logistic regression.
+We try both: a simpler panel using fewer of the in-class proteins, and an alternative panel using LASSO logistic regression.
 
 ## Load libraries and data
 
-```{r}
+```{r, message = FALSE}
 library(tidyverse)
 library(infer)
 library(randomForest)
@@ -33,3 +38,73 @@ biomarker_split <- biomarker_clean %>%
 train_data <- training(biomarker_split)
 test_data <- testing(biomarker_split)
 ```
+
+
+## Baseline: In-Class Analysis
+
+First we redo the in-class selection (top 10 proteins by t-test and by random forest, then a hard intersection) on the training data, so we have something to benchmark against.
+
+```{r}
+# function to compute tests
+test_fn <- function(.df) {
+  t_test(.df,
+         formula = level ~ group,
+         order = c("ASD", "TD"),
+         alternative = "two-sided",
+         var.equal = FALSE)
+}
+
+ttests_out <- train_data %>%
+  # drop ADOS score
+  select(-ados) %>%
+  # arrange in long format
+  pivot_longer(-group,
+               names_to = "protein",
+               values_to = "level") %>%
+  # nest by protein
+  nest(data = c(level, group)) %>%
+  # compute t tests
+  mutate(ttest = map(data, test_fn)) %>%
+  unnest(ttest) %>%
+  # sort by p-value
+  arrange(p_value) %>%
+  # multiple testing correction
+  mutate(m = n(),
+         hm = log(m) + 1 / (2 * m) - digamma(1),
+         rank = row_number(),
+         p.adj = m * hm * p_value / rank)
+
+# top 10 proteins by t-test
+proteins_s1 <- ttests_out %>%
+  slice_min(p.adj, n = 10) %>%
+  pull(protein)
+```
+
+```{r}
+# store predictors and response separately
+predictors <- train_data %>%
+  select(-c(group, ados))
+
+response <- train_data %>% pull(group) %>% factor()
+
+# fit RF
+set.seed(67)
+rf_out <- randomForest(x = predictors,
+                       y = response,
+                       ntree = 1000,
+                       importance = TRUE)
+
+# top 10 proteins by RF importance
+proteins_s2 <- rf_out$importance %>%
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  slice_max(MeanDecreaseGini, n = 10) %>%
+  pull(protein)
+```
+
+```{r}
+# hard intersection like in class
+proteins_sstar <- intersect(proteins_s1, proteins_s2)
+proteins_sstar
+```
+

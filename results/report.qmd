@@ -1,7 +1,11 @@
 ---
 title: "Biomarkers of ASD"
-subtitle: "If you want a subtitle put it here"
-author: "List names here"
+author:
+  - Praveen Arunshankar
+  - Jocelyn Lee
+  - Stacy Callahan
+  - Kendrick Lam
+  - Lawrence Huynh
 date: last-modified
 published-title: "Updated"
 editor: visual
@@ -27,7 +31,9 @@ Write a brief one-paragraph abstract that describes the contents of your write-u
 
 ## Dataset
 
-Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
+The biomarker data in this study comes from a sample of 154 youth males. In the sample, 76 were classified as having autism spectrum disorder (ASD) and 78 were classified as typically developing (TD). The average age of the groups was 5.6 years and 5.7 years respectively. Within the ASD group, the 3 ethnicity classifications making up most of the sample are White (33/76), Hispanic/Latino (26/76) and Multiple Ethnicities/Other (9/76). Within the TD group, the 3 biggest ethnicity classifications were White (40/78), African American/Black (14/78) and Multiple Ethnicities/Other (14/78). Within both groups, a majority of subjects did not have any co-morbid conditions. The only co-morbid condition reported that affected a high number of people was seasonal allergies (30/76 in the ASD group and 17/78 in the TD group). All other co-morbid conditions affected no more than 2 people within each group. Lastly, a vast majority of participants did not report taking psychiatric medications. All other psychiatric medications observed were taken by no more than 2 people.
+
+The data was obtained by performing a fasting blood draw in the morning on the healthy subjects. The blood was then processed and analyzed through a Somascan™ assay to get information on the protein levels. The study obtained the levels of 1317 proteins from each of the 154 subjects, of which 192 proteins did not pass the study's quality control. The data was preprocessed by applying a log10 transformation and then normalizing the data with a z-transformation. Furthermore, outliers with z-scores that were greater than 3 or less than -3 were changed to 3 and -3 respectively.
 
 ## Summary of published analysis
 

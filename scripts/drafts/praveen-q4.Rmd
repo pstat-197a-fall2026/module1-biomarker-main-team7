@@ -312,3 +312,105 @@ comparison <- bind_rows(baseline_results, simple_results, lasso_results)
 
 comparison %>% select(-proteins)
 ```
+
+
+## Repeated Splits
+
+The test set only has about 30 subjects, so one split could be misleading. Here we redo everything over 20 random splits (seeds 67 to 86) and average the metrics. For each split we redo the t-test and random forest selection on the training data, and the simpler panel uses the top `n_simple` proteins of that split's intersection. This takes a few minutes because of the random forests.
+
+```{r}
+run_split <- function(seed) {
+  set.seed(seed)
+  split <- initial_split(biomarker_clean, prop = 0.8, strata = group)
+  train <- training(split)
+  test <- testing(split)
+
+  # t-test selection
+  tt <- train %>%
+    select(-ados) %>%
+    pivot_longer(-group, names_to = "protein", values_to = "level") %>%
+    nest(data = c(level, group)) %>%
+    mutate(ttest = map(data, test_fn)) %>%
+    unnest(ttest) %>%
+    arrange(p_value) %>%
+    mutate(m = n(),
+           hm = log(m) + 1 / (2 * m) - digamma(1),
+           rank = row_number(),
+           p.adj = m * hm * p_value / rank)
+  s1 <- tt %>% slice_min(p.adj, n = 10) %>% pull(protein)
+
+  # RF selection
+  rf <- randomForest(x = train %>% select(-c(group, ados)),
+                     y = factor(train$group),
+                     ntree = 1000,
+                     importance = TRUE)
+  s2 <- rf$importance %>%
+    as_tibble() %>%
+    mutate(protein = rownames(rf$importance)) %>%
+    slice_max(MeanDecreaseGini, n = 10) %>%
+    pull(protein)
+
+  sstar <- intersect(s1, s2)
+
+  # simpler panel = top n_simple of the intersection by p-value
+  simple <- tt %>% filter(protein %in% sstar) %>% pull(protein)
+  simple <- simple[1:min(n_simple, length(simple))]
+
+  # logistic regression on a panel
+  glm_metrics <- function(proteins) {
+    train_sub <- train %>%
+      select(all_of(proteins)) %>%
+      mutate(class = (train$group == "ASD"))
+    test_sub <- test %>%
+      select(all_of(proteins)) %>%
+      mutate(class = (test$group == "ASD"))
+    fit <- glm(class ~ ., data = train_sub, family = "binomial")
+    test_sub %>%
+      add_predictions(fit, type = "response") %>%
+      eval_fn()
+  }
+
+  # lasso
+  cv <- cv.glmnet(train %>% select(-c(group, ados)) %>% as.matrix(),
+                  train$group == "ASD",
+                  family = "binomial",
+                  type.measure = "auc")
+  lasso <- test %>%
+    mutate(class = (group == "ASD"),
+           pred = predict(cv,
+                          newx = test %>% select(-c(group, ados)) %>% as.matrix(),
+                          s = "lambda.1se", type = "response")[, 1]) %>%
+    eval_fn()
+
+  bind_rows(glm_metrics(sstar) %>% mutate(method = "in-class (hard intersection)"),
+            glm_metrics(simple) %>% mutate(method = "simpler panel"),
+            lasso %>% mutate(method = "lasso")) %>%
+    mutate(seed = seed)
+}
+
+repeated_out <- map_dfr(67:86, run_split)
+```
+
+```{r}
+# average and sd of each metric across splits
+repeated_summary <- repeated_out %>%
+  group_by(method, .metric) %>%
+  summarize(mean = mean(.estimate),
+            sd = sd(.estimate),
+            .groups = "drop")
+
+repeated_summary %>%
+  select(-sd) %>%
+  pivot_wider(names_from = .metric, values_from = mean)
+
+repeated_summary %>%
+  select(-mean) %>%
+  pivot_wider(names_from = .metric, values_from = sd)
+```
+
+Averaged over 20 splits, the in-class panel has an AUC of 0.780, the 3 protein simpler panel has 0.773, and LASSO has 0.804. Accuracy follows the same pattern (0.720, 0.712, and 0.734). The standard deviations across splits are around 0.05, so these differences are smaller than how much the results change from one split to another.
+
+
+## Summary
+
+A 3 protein panel (picked with cross validation on the training data) performs about as well as the 6 protein in-class panel, with an average AUC of 0.773 vs 0.780 over 20 splits. So the panel can be cut in half without losing much accuracy. LASSO does slightly better on average (AUC 0.804), but it uses many more proteins (24 on our main split), and the improvement is within the split-to-split variation. Overall, the simpler 3 protein panel seems like the better tradeoff.

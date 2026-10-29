@@ -301,3 +301,14 @@ lasso_results
 ```
 
 LASSO picks 24 proteins, including 5 of the 6 in-class proteins (all except RELT). On the test set its AUC is 0.797, about the same as the in-class panel (0.789), and the sensitivity, specificity, and accuracy are the same. So LASSO doesn't clearly improve on the in-class panel on this split, and it uses four times as many proteins.
+
+
+## Comparison
+
+Here are all three panels side by side on the same test set.
+
+```{r}
+comparison <- bind_rows(baseline_results, simple_results, lasso_results)
+
+comparison %>% select(-proteins)
+```

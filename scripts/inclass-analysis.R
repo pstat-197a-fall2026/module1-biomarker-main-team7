@@ -98,6 +98,9 @@ class_metrics <- metric_set(sensitivity,
 
 testing(biomarker_split) %>%
   add_predictions(fit, type = 'response') %>%
-  class_metrics(estimate = factor(pred > 0.5),
-              truth = factor(class), pred,
-              event_level = 'second')
+  mutate(est = factor(pred > 0.5, levels = c(FALSE, TRUE)),
+         tr = factor(class, levels = c(FALSE, TRUE))) %>%
+  class_metrics(truth = tr,
+                estimate = est,
+                pred,
+                event_level = 'second')

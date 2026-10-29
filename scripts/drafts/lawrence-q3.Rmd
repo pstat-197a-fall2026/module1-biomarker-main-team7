@@ -143,11 +143,6 @@ fit <- glm(class ~ ., data = train_biomarker_sstar, family = 'binomial')
 
 # Evaluating Accuracy 
 
-## ERROR With class_metrics
-
-This error is yet to be fixed within the inclass-analysis.R as well.
-Waiting on Dr. Coburn to assess/fix the bug. 
-
 ```{r}
 # evaluate errors on test set
 class_metrics <- metric_set(sensitivity, 
@@ -155,10 +150,23 @@ class_metrics <- metric_set(sensitivity,
                             accuracy,
                             roc_auc)
 
-test_biomarker_sstar %>% 
+test_biomarker_sstar %>%
   add_predictions(fit, type = 'response') %>%
-  class_metrics(estimate = factor(pred > 0.5),
-              truth = factor(class), pred,
-              event_level = 'second')
+  mutate(est = factor(pred > 0.5, levels = c(FALSE, TRUE)),
+         tr = factor(class, levels = c(FALSE, TRUE))) %>%
+  class_metrics(truth = tr,
+                estimate = est,
+                pred,
+                event_level = 'second')
 ```
 
+# Main Changes
+
+1. Models were trained with a training subset of the overall data and tested with a separate subset of the data. Original analysis trained on all data. 
+  a. Original probably picked up patterns exclusive to our data. Idk tho
+  
+2. Selected 15 proteins instead of 10. 
+  a. More predictors to predict "group" 
+
+3. Subset of proteins selected are from t test or random forest instead of proteins from t test and random forest. 
+  a. More predictors to predict "group"

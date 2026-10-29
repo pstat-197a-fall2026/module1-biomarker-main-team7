@@ -257,3 +257,47 @@ simple_results
 
 Cross validation picks a 3 protein panel (DERM, RELT, IgD). On the test set it gets an AUC of 0.766 and accuracy of 0.688, compared to 0.789 and 0.656 for the full 6 protein panel. So we can cut the panel in half and get about the same performance.
 
+## Alternative Panel: LASSO
+
+For an alternative panel we use LASSO logistic regression on all the proteins. LASSO picks the proteins and fits the model at the same time. We choose lambda with 10-fold cross validation on the training data only.
+
+```{r}
+x_train <- train_data %>% select(-c(group, ados)) %>% as.matrix()
+y_train <- train_data %>% pull(group) == "ASD"
+
+x_test <- test_data %>% select(-c(group, ados)) %>% as.matrix()
+
+# pick lambda with 10-fold cross validation
+set.seed(67)
+lasso_cv <- cv.glmnet(x_train, y_train,
+                      family = "binomial",
+                      type.measure = "auc")
+
+# proteins with nonzero coefficients
+lasso_coef <- coef(lasso_cv, s = "lambda.1se")
+proteins_lasso <- rownames(lasso_coef)[lasso_coef[, 1] != 0]
+proteins_lasso <- setdiff(proteins_lasso, "(Intercept)")
+proteins_lasso
+```
+
+Then we evaluate the LASSO model on the test set.
+
+```{r}
+lasso_metrics <- test_data %>%
+  mutate(class = (group == "ASD"),
+         pred = predict(lasso_cv, newx = x_test,
+                        s = "lambda.1se", type = "response")[, 1]) %>%
+  eval_fn()
+
+lasso_results <- lasso_metrics %>%
+  select(.metric, .estimate) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate) %>%
+  mutate(method = "lasso",
+         n_proteins = length(proteins_lasso),
+         proteins = paste(proteins_lasso, collapse = ", ")) %>%
+  select(method, n_proteins, everything())
+
+lasso_results
+```
+
+LASSO picks 24 proteins, including 5 of the 6 in-class proteins (all except RELT). On the test set its AUC is 0.797, about the same as the in-class panel (0.789), and the sensitivity, specificity, and accuracy are the same. So LASSO doesn't clearly improve on the in-class panel on this split, and it uses four times as many proteins.

@@ -48,7 +48,26 @@ biomarker_clean_without_log_transform_outlier_trim <- read_csv('../data/biomarke
 
 ## Abstract
 
-Write a brief one-paragraph abstract that describes the contents of your write-up.
+This report examines how sensitive the protein biomarker analysis of 
+Hewitson et al. (2021) is to choices made in its methodology. The data 
+consist of serum levels of 1,317 proteins from 154 boys, 76 with autism 
+spectrum disorder (ASD) and 78 typically developing (TD). We first explored 
+the preprocessing. Raw protein levels are strongly right-skewed, which 
+motivates the log transformation. Some subjects have many outlying values, 
+but outliers are not concentrated in either group. We then modified the 
+in-class selection pipeline, which combines t-tests and random forest 
+importance and fits a logistic regression to the selected proteins. 
+Selecting proteins on a training partition, rather than on the full dataset, 
+lowered test AUROC from 0.883 to 0.789. This indicates the in-class results 
+were inflated by data leakage. Selecting more proteins and combining the two 
+methods' lists with a union instead of an intersection lowered performance 
+further, to an AUROC of 0.742. Finally, we searched for alternative panels. 
+A 3-protein panel (DERM, RELT, IgD), chosen by cross-validation, performed 
+comparably to the 6-protein in-class panel (AUROC 0.766 vs. 0.789; accuracy 
+0.688 vs. 0.656). A 24-protein LASSO panel offered no meaningful improvement 
+(AUROC 0.797). Overall, a small, carefully selected panel does about as well 
+as larger ones, though the small test sets limit how precisely the panels 
+can be compared.
 
 ## Dataset
 
@@ -115,10 +134,6 @@ outliers_by_group <- outliers_per_subject %>%
   summarize("# of Average Outliers" = round(mean(outliers), 2), "Total Outliers" = sum(outliers))
 outliers_by_group %>% kable()
 ```
-<<<<<<< HEAD
-=======
-
->>>>>>> 5190a46aa32e4daf1f37ae66a86cb09b960dd3ba
 
 ### Methodological variations
 

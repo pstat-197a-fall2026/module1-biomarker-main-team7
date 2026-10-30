@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.7.32">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -15,16 +15,10 @@
 
 <title>Biomarkers of ASD</title>
 <style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
+code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -42,10 +36,10 @@ ul.task-list li input[type="checkbox"] {
 <script src="report_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="report_files/libs/quarto-html/anchor.min.js"></script>
 <link href="report_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="report_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="report_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="report_files/libs/bootstrap/bootstrap-e491f8ff3e9ef7ba1930cda3f1cae37e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="report_files/libs/bootstrap/bootstrap-16bbabe37efa2ecafad14e96199f1a13.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="report_files/libs/quarto-diagram/mermaid.min.js"></script>
 <script src="report_files/libs/quarto-diagram/mermaid-init.js"></script>
 <link href="report_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
@@ -239,7 +233,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p><strong>Selection on a training partition.</strong> In the in-class analysis, the t-tests and random forest were run on the full dataset before the data was split. The test subjects therefore helped choose the proteins they were later used to evaluate. When we set aside 20% of the data first and ran every selection step on the training set only, the hard intersection gave a 6-protein panel (DERM, IgD, PTN, RELT, MAPK14, MAPK2). Test AUROC fell from 0.883 to 0.789, and accuracy fell from 0.774 to 0.656. This drop suggests the in-class results are optimistic because of data leakage. The training-only figures are a more honest estimate of how the panel would perform on new subjects.</p>
-<p><strong>Larger panels and a fuzzy intersection.</strong> We then took the top 15 proteins from each method instead of the top 10. We also replaced the hard intersection with a union, keeping any protein selected by <em>either</em> method, which gave a panel of [n] proteins. Selection was again done on a training partition (75/25, stratified by group). Performance dropped further: AUROC was 0.742, accuracy 0.615, sensitivity 0.579 and specificity 0.650. These two changes were applied together, so we cannot fully separate their effects. Both, however, push in the same direction: they add lower-ranked proteins that carry weaker signal. With roughly 115 training subjects, a logistic regression on this many predictors likely overfits the training data rather than gaining predictive power. Being more selective, not less, appears to work better for this dataset.</p>
+<p><strong>Larger panels and a fuzzy intersection.</strong> We then took the top 15 proteins from each method instead of the top 10. We also replaced the hard intersection with a union, keeping any protein selected by <em>either</em> method, which gave a panel of 21 proteins. Selection was again done on a training partition (75/25, stratified by group). Performance dropped further: AUROC was 0.742, accuracy 0.615, sensitivity 0.579 and specificity 0.650. These two changes were applied together, so we cannot fully separate their effects. Both, however, push in the same direction: they add lower-ranked proteins that carry weaker signal. With roughly 115 training subjects, a logistic regression on this many predictors likely overfits the training data rather than gaining predictive power. Being more selective, not less, appears to work better for this dataset.</p>
 <p>These comparisons rely on a single test set each, of 31–39 subjects, so one misclassified subject shifts accuracy by about 0.03. The analyses also used different random splits. The direction of the changes is more reliable than their exact size.</p>
 </section>
 <section id="improved-classifier" class="level3">
@@ -298,7 +292,60 @@ ul.task-list li input[type="checkbox"] {
 <p>We benchmarked two alternatives against the in-class method. All three panels were selected using only the training data and evaluated on the same held-out test set.</p>
 <p><strong>Simpler panel.</strong> We ranked the 6 baseline proteins by t-test p-value and fit logistic regressions using the top 1 through 6 proteins. To avoid using the test set to choose the panel size, we chose it by 5-fold cross-validation on the training data. We picked the smallest panel whose cross-validated AUROC was within 0.05 of the best. This gave a 3-protein panel: DERM, RELT and IgD. On the test set it reached an AUROC of 0.766 and accuracy of 0.688, compared with 0.789 and 0.656 for the full 6-protein panel. Halving the panel therefore gives comparable performance, with slightly higher accuracy and sensitivity and slightly lower AUROC and specificity. A smaller panel would be cheaper to measure and easier to validate clinically.</p>
 <p><strong>LASSO panel.</strong> We also fit a LASSO logistic regression on all proteins, choosing the penalty by 10-fold cross-validation on the training data (λ.1se). LASSO selected 24 proteins, including 5 of the 6 baseline proteins (all except RELT). Its test AUROC was 0.797, and its sensitivity, specificity and accuracy matched the baseline. LASSO therefore did not meaningfully improve on the in-class panel and used four times as many proteins.</p>
-<p>Overall, the simpler 3-protein panel is the most practical result: it performs about as well as the in-class panel with half the proteins. DERM and IgD also appear in the published core panel. As in the previous section, the differences between panels are within what one test set of 32 subjects can resolve. Repeated splits or nested cross-validation would be needed to say any panel is truly better.</p>
+<p><strong>Repeated splits.</strong> Because a single test set of 32 subjects is noisy, we repeated the whole procedure (train/test split, t-test and random forest selection, simpler panel of size 3, and LASSO) over 20 random splits and averaged the test set metrics.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Average test set performance over 20 random splits.</caption>
+<colgroup>
+<col style="width: 36%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Panel</th>
+<th style="text-align: right;">Sensitivity</th>
+<th style="text-align: right;">Specificity</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">AUROC</th>
+<th style="text-align: right;">AUROC SD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">In-class method</td>
+<td style="text-align: right;">0.722</td>
+<td style="text-align: right;">0.719</td>
+<td style="text-align: right;">0.720</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.055</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Simpler panel (3 proteins)</td>
+<td style="text-align: right;">0.719</td>
+<td style="text-align: right;">0.706</td>
+<td style="text-align: right;">0.712</td>
+<td style="text-align: right;">0.773</td>
+<td style="text-align: right;">0.048</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LASSO</td>
+<td style="text-align: right;">0.706</td>
+<td style="text-align: right;">0.762</td>
+<td style="text-align: right;">0.734</td>
+<td style="text-align: right;">0.804</td>
+<td style="text-align: right;">0.059</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Across splits, the 3-protein panel stays within 0.01 AUROC of the in-class panel, so the simpler panel holds up beyond the single split above. LASSO has the highest average AUROC (0.804), but its gain of about 0.02 is smaller than the split-to-split standard deviation (about 0.05) and it needs far more proteins.</p>
+<p>Overall, the simpler 3-protein panel is the most practical result: it performs about as well as the in-class panel with half the proteins. DERM and IgD also appear in the published core panel. LASSO may offer a small improvement, but not one we can distinguish from variation between splits.</p>
 </section>
 </section>
 
@@ -355,14 +402,13 @@ ul.task-list li input[type="checkbox"] {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
         }
-      }
-      return codeEl.innerText;
+        return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy

@@ -159,7 +159,7 @@ estimate of how the panel would perform on new subjects.
 **Larger panels and a fuzzy intersection.** We then took the top 15 proteins 
 from each method instead of the top 10. We also replaced the hard intersection 
 with a union, keeping any protein selected by *either* method, which gave a 
-panel of [n] proteins. Selection was again done on a training partition (75/25, 
+panel of 21 proteins. Selection was again done on a training partition (75/25, 
 stratified by group). Performance dropped further: AUROC was 0.742, accuracy 
 0.615, sensitivity 0.579 and specificity 0.650. These two changes were applied 
 together, so we cannot fully separate their effects. Both, however, push in the 
@@ -208,9 +208,30 @@ RELT). Its test AUROC was 0.797, and its sensitivity, specificity and accuracy
 matched the baseline. LASSO therefore did not meaningfully improve on the 
 in-class panel and used four times as many proteins.
 
-Overall, the simpler 3-protein panel is the most practical result: it performs 
-about as well as the in-class panel with half the proteins. DERM and IgD also 
-appear in the published core panel. As in the previous section, the differences 
-between panels are within what one test set of 32 subjects can resolve. 
-Repeated splits or nested cross-validation would be needed to say any panel is 
-truly better.
+**Repeated splits.** Because a single test set of 32 subjects is noisy, we
+repeated the whole procedure (train/test split, t-test and random forest
+selection, simpler panel of size 3, and LASSO) over 20 random splits and
+averaged the test set metrics.
+
+```{r}
+repeated <- tribble(
+  ~Panel, ~Sensitivity, ~Specificity, ~Accuracy, ~AUROC, ~`AUROC SD`,
+  "In-class method", 0.722, 0.719, 0.720, 0.780, 0.055,
+  "Simpler panel (3 proteins)", 0.719, 0.706, 0.712, 0.773, 0.048,
+  "LASSO", 0.706, 0.762, 0.734, 0.804, 0.059
+)
+knitr::kable(repeated, digits = 3,
+             caption = "Average test set performance over 20 random splits.")
+```
+
+Across splits, the 3-protein panel stays within 0.01 AUROC of the in-class
+panel, so the simpler panel holds up beyond the single split above. LASSO has
+the highest average AUROC (0.804), but its gain of about 0.02 is smaller than
+the split-to-split standard deviation (about 0.05) and it needs far more
+proteins.
+
+Overall, the simpler 3-protein panel is the most practical result: it performs
+about as well as the in-class panel with half the proteins. DERM and IgD also
+appear in the published core panel. LASSO may offer a small improvement, but
+not one we can distinguish from variation between splits.
+

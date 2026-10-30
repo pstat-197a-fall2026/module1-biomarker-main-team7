@@ -18,11 +18,32 @@ execute:
   cache: true
 ---
 
-Use this as a template. Keep the headers and remove all other text. In all, your report can be quite short. When it is complete, render and then push changes to your team repository.
-
-```{r}
+```{r, include = F}
 # load any other packages and read data here
 library(tidyverse)
+library(glue)
+library(knitr)
+# get names
+var_names <- read_csv('../data/biomarker-raw.csv', 
+                     col_names = F, 
+                     n_max = 2, 
+                     col_select = -(1:2)) %>%
+  t() %>%
+  as_tibble() %>%
+  rename(name = V1, 
+         abbreviation = V2) %>%
+  na.omit()
+
+biomarker_clean_without_log_transform_outlier_trim <- read_csv('../data/biomarker-raw.csv', 
+         skip = 2,
+         col_select = -2L,
+         col_names = c('group', 
+                       'empty',
+                       pull(var_names, abbreviation),
+                       'ados'),
+         na = c('-', '')) %>%
+  filter(!is.na(group)) %>%
+  select(group, ados, everything())
 ```
 
 ## Abstract
@@ -41,10 +62,18 @@ The paper used 3 different methods to determine a panel of proteins for identify
 
 From the 3 methods, the paper found 5 proteins that were common across all testing methods. A logistic regression model was fit to these 5 proteins as a baseline for testing the predictive accuracy. Additional proteins that were identified from the other models were added one by one to see if they added any predictive power. The process was repeated 1000 times. Confounding factors were also tested by running t-tests and calculating Spearman's rank correlation.
 
-The 5 core proteins that were flagged as significant in all 3 models were MAPK14, IgD, DERM, EPHB2 and suPAR. 4 additional proteins from the models were found to have increased the predictive power and AUC of the logistic regression model: ROR1, GI24, elF-4H, and ARSB. The AUC value for these 9 proteins was 0.860±0.064. The sensitivity was 0.833±0.118 and the specificity was 0.846±0.118.
+The 5 core proteins that were flagged as significant in all 3 models were MAPK14, IgD, DERM, EPHB2 and suPAR. 4 additional proteins from the models were found to have increased the predictive power and AUC of the logistic regression model: ROR1, GI24, elF-4H, and ARSB. The AUC value for the model with these 9 proteins was 0.860±0.064. The sensitivity was 0.833±0.118 and the specificity was 0.846±0.118.
 
-
-Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
+```{mermaid}
+flowchart LR
+  A(154 participants) --> B(1317 protein measurements from participants)
+  B --> C(Random Forests for top 10 significant proteins) 
+  B --> D(T-tests for top 10 significant proteins)
+  B --> E(Correlation calculations for top 10 significant proteins)
+  C & D & E --> F(Base logistic regression Model with proteins in hard intersection)
+  F --> G(Add other significant proteins 1 by 1 to the model if they increase accuracy)
+  G --> H[9 proteins identified as the best panel]
+```
 
 ## Findings
 
@@ -52,7 +81,41 @@ Summarize your findings here. I've included some subheaders in a way that seems 
 
 ### Impact of preprocessing and outliers
 
-A couple of important choices were made in the data preprocessing. These were: (1) log-transforming the data, and (2) trimming outliers. These transformations were performed because the several of the distributions of protein levels had very large outliers which would have skewed the analysis. Since these outliers did not appear to be dependent on ASD vs ND group membership, trimming outliers should not bias the data too much.
+A couple of important choices were made in the data preprocessing. These were: (1) log-transforming the data, and (2) trimming outliers. These transformations were performed because the several of the distributions of protein levels had very large outliers which would have skewed the analysis. We investigated the distribution of protein levels for 5 proteins (PBEF, Carbonic anhydrase III, FGF-8B, TRAIL R1, and CNTN2) and observed a noticeable right skew in all of them. Below is a distribution of 1 of proteins observed.
+
+```{r}
+ggplot(data = biomarker_clean_without_log_transform_outlier_trim, aes(x = PBEF)) + 
+  geom_histogram(binwidth = 100) + 
+  labs(x = "PBEF Level", y = "Frequency", title = "Distribution of PBEF Protein Levels")
+```
+Because of the skew of the raw protein levels, a log-transform would help transform the data to be more symmetric for the tests completed.
+
+We also investigated the data before trimming outliers. Despite nearly every participant having some number of proteins with outlier levels (>3 standard deviations from the mean), only 8 have more than 80 outliers, while the rest have under 50.
+
+```{r}
+proteins_only <- biomarker_clean_without_log_transform_outlier_trim %>% select(-c(group, ados))
+means <- colMeans(proteins_only , na.rm = TRUE)
+sds   <- sapply(proteins_only , sd, na.rm = TRUE)
+
+outliers_per_subject <- biomarker_clean_without_log_transform_outlier_trim  %>%
+  rowwise() %>%
+  mutate(outliers = sum(abs(c_across(names(proteins_only)) - means) > 3 * sds, na.rm = TRUE)) %>%
+  ungroup()
+
+barplot(outliers_per_subject %>% arrange(outliers %>% desc()) %>% pull(outliers), ylab = "Number of Outliers", xlab = "Participants", main = "Number of Outlier Protein Levels per Participant")
+```
+
+
+Lastly, we looked at the number of outliers in each group. Since the number of outliers did not seem to significantly differ between the ASD and TD groups, trimming outliers should not bias the data in one direction too much.
+
+```{r}
+outliers_by_group <- outliers_per_subject %>%
+  group_by(group) %>%
+  rename(Group = group) %>% 
+  summarize("# of Average Outliers" = round(mean(outliers), 2), "Total Outliers" = sum(outliers))
+outliers_by_group %>% kable()
+```
+
 
 ### Methodological variations
 

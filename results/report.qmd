@@ -129,7 +129,7 @@ Lastly, we looked at the number of outliers in each group. Since the number of o
 outliers_by_group <- outliers_per_subject %>%
   group_by(group) %>%
   rename(Group = group) %>% 
-  summarize("# of Average Outliers" = round(mean(outliers), 2), "Total Outliers" = sum(outliers))
+  summarize("Average # of Outliers" = round(mean(outliers), 2), "Total # of Outliers" = sum(outliers))
 outliers_by_group %>% kable()
 ```
 

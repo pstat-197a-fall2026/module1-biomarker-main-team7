@@ -115,6 +115,10 @@ outliers_by_group <- outliers_per_subject %>%
   summarize("# of Average Outliers" = round(mean(outliers), 2), "Total Outliers" = sum(outliers))
 outliers_by_group %>% kable()
 ```
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5190a46aa32e4daf1f37ae66a86cb09b960dd3ba
 
 ### Methodological variations
 

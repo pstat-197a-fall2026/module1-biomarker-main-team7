@@ -71,9 +71,9 @@ can be compared.
 
 ## Dataset
 
-The biomarker data in this study comes from a selected sample of 154 youth males aged 18 months to 8 years. In the sample, 76 were classified as having autism spectrum disorder (ASD) and 78 were classified as typically developing (TD). The average age of the groups was 5.6 years and 5.7 years respectively. Within the ASD group, the 3 ethnicity classifications making up most of the sample are White (33/76), Hispanic/Latino (26/76) and Multiple Ethnicities/Other (9/76). Within the TD group, the 3 biggest ethnicity classifications were White (40/78), African American/Black (14/78) and Multiple Ethnicities/Other (14/78). Within both groups, a majority of subjects did not have any co-morbid conditions. The only co-morbid condition reported that affected a high number of people was seasonal allergies (30/76 in the ASD group and 17/78 in the TD group). All other co-morbid conditions affected no more than 2 people within each group. Lastly, a vast majority of participants did not report taking psychiatric medications. All other psychiatric medications observed were taken by no more than 2 people.
+The biomarker data in this study comes from a selected sample of 154 youth males aged 18 months to 8 years. All subjects were screened to make sure that they did not have genetic, metabolic, physical, mental, or other neurological disorders. In the sample, 76 were classified as having autism spectrum disorder (ASD) and 78 were classified as typically developing (TD). The average age of the groups was 5.6 years and 5.7 years respectively. Within the ASD group, the 3 ethnicity classifications making up most of the sample are White (33/76), Hispanic/Latino (26/76) and Multiple Ethnicities/Other (9/76). Within the TD group, the 3 biggest ethnicity classifications were White (40/78), African American/Black (14/78) and Multiple Ethnicities/Other (14/78). Within both groups, a majority of subjects did not have any co-morbid conditions. The only co-morbid condition reported that affected a high number of people was seasonal allergies (30/76 in the ASD group and 17/78 in the TD group). All other co-morbid conditions affected no more than 2 people within each group. Lastly, a vast majority of subjects did not report taking psychiatric medications. All other psychiatric medications observed were taken by no more than 2 people.
 
-The data was obtained by performing a fasting blood draw in the morning on the healthy subjects. The blood was then processed and analyzed through a Somascan™ assay to get information on the protein levels. The study obtained the levels of 1317 proteins from each of the 154 subjects, of which 192 proteins did not pass the study's quality control. The data was preprocessed by applying a log10 transformation and then normalizing the data with a z-transformation. Furthermore, outliers with z-scores that were greater than 3 or less than -3 were changed to 3 and -3 respectively.
+The data was obtained by performing a fasting blood draw in the morning on the healthy subjects. The blood was then processed and analyzed through a Somascan™ assay to get information on the protein levels. The study obtained the levels of 1317 proteins from each of the 154 subjects, of which 192 proteins did not pass the study's quality control. For our work, all proteins were included. The data was preprocessed by applying a log10 transformation and then normalizing the data with a z-transformation. Furthermore, outliers with z-scores that were greater than 3 or less than -3 were clipped to 3 and -3 respectively.
 
 ## Summary of published analysis
 
@@ -85,18 +85,16 @@ The 5 core proteins that were flagged as significant in all 3 models were MAPK14
 
 ```{mermaid}
 flowchart LR
-  A(154 participants) --> B(1317 protein measurements from participants)
+  A(154 subjects) --> B(1317 protein measurements from subjects)
   B --> C(Random Forests for top 10 significant proteins) 
   B --> D(T-tests for top 10 significant proteins)
   B --> E(Correlation calculations for top 10 significant proteins)
-  C & D & E --> F(Base logistic regression Model with proteins in hard intersection)
+  C & D & E --> F(Base logistic regression model with proteins in hard intersection)
   F --> G(Add other significant proteins 1 by 1 to the model if they increase accuracy)
-  G --> H[9 proteins identified as the best panel]
+  G --> H(9 proteins identified as the best panel)
 ```
 
 ## Findings
-
-Summarize your findings here. I've included some subheaders in a way that seems natural to me; you can structure this section however you like.
 
 ### Impact of preprocessing and outliers
 
@@ -109,7 +107,7 @@ ggplot(data = biomarker_clean_without_log_transform_outlier_trim, aes(x = PBEF))
 ```
 Because of the skew of the raw protein levels, a log-transform would help transform the data to be more symmetric for the tests completed.
 
-We also investigated the data before trimming outliers. Despite nearly every participant having some number of proteins with outlier levels (>3 standard deviations from the mean), only 8 have more than 80 outliers, while the rest have under 50.
+We also investigated the data before trimming outliers. Despite nearly every subject having some number of proteins with outlier levels (>3 standard deviations from the mean), only 8 have more than 80 outliers, while the rest have under 50.
 
 ```{r}
 proteins_only <- biomarker_clean_without_log_transform_outlier_trim %>% select(-c(group, ados))
@@ -121,7 +119,7 @@ outliers_per_subject <- biomarker_clean_without_log_transform_outlier_trim  %>%
   mutate(outliers = sum(abs(c_across(names(proteins_only)) - means) > 3 * sds, na.rm = TRUE)) %>%
   ungroup()
 
-barplot(outliers_per_subject %>% arrange(outliers %>% desc()) %>% pull(outliers), ylab = "Number of Outliers", xlab = "Participants", main = "Number of Outlier Protein Levels per Participant")
+barplot(outliers_per_subject %>% arrange(outliers %>% desc()) %>% pull(outliers), ylab = "Number of Outliers", xlab = "Subjects", main = "Number of Outlier Protein Levels per Subject")
 ```
 
 

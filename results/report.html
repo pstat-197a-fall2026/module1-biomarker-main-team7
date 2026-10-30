@@ -96,12 +96,12 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="abstract" class="level2">
 <h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
-<p>Write a brief one-paragraph abstract that describes the contents of your write-up.</p>
+<p>This report examines how sensitive the protein biomarker analysis of Hewitson et al.&nbsp;(2021) is to choices made in its methodology. The data consist of serum levels of 1,317 proteins from 154 boys, 76 with autism spectrum disorder (ASD) and 78 typically developing (TD). We first explored the preprocessing. Raw protein levels are strongly right-skewed, which motivates the log transformation. Some subjects have many outlying values, but outliers are not concentrated in either group. We then modified the in-class selection pipeline, which combines t-tests and random forest importance and fits a logistic regression to the selected proteins. Selecting proteins on a training partition, rather than on the full dataset, lowered test AUROC from 0.883 to 0.789. This indicates the in-class results were inflated by data leakage. Selecting more proteins and combining the two methods’ lists with a union instead of an intersection lowered performance further, to an AUROC of 0.742. Finally, we searched for alternative panels. A 3-protein panel (DERM, RELT, IgD), chosen by cross-validation, performed comparably to the 6-protein in-class panel (AUROC 0.766 vs.&nbsp;0.789; accuracy 0.688 vs.&nbsp;0.656). A 24-protein LASSO panel offered no meaningful improvement (AUROC 0.797). Overall, a small, carefully selected panel does about as well as larger ones, though the small test sets limit how precisely the panels can be compared.</p>
 </section>
 <section id="dataset" class="level2">
 <h2 class="anchored" data-anchor-id="dataset">Dataset</h2>
-<p>The biomarker data in this study comes from a selected sample of 154 youth males aged 18 months to 8 years. In the sample, 76 were classified as having autism spectrum disorder (ASD) and 78 were classified as typically developing (TD). The average age of the groups was 5.6 years and 5.7 years respectively. Within the ASD group, the 3 ethnicity classifications making up most of the sample are White (33/76), Hispanic/Latino (26/76) and Multiple Ethnicities/Other (9/76). Within the TD group, the 3 biggest ethnicity classifications were White (40/78), African American/Black (14/78) and Multiple Ethnicities/Other (14/78). Within both groups, a majority of subjects did not have any co-morbid conditions. The only co-morbid condition reported that affected a high number of people was seasonal allergies (30/76 in the ASD group and 17/78 in the TD group). All other co-morbid conditions affected no more than 2 people within each group. Lastly, a vast majority of participants did not report taking psychiatric medications. All other psychiatric medications observed were taken by no more than 2 people.</p>
-<p>The data was obtained by performing a fasting blood draw in the morning on the healthy subjects. The blood was then processed and analyzed through a Somascan™ assay to get information on the protein levels. The study obtained the levels of 1317 proteins from each of the 154 subjects, of which 192 proteins did not pass the study’s quality control. The data was preprocessed by applying a log10 transformation and then normalizing the data with a z-transformation. Furthermore, outliers with z-scores that were greater than 3 or less than -3 were changed to 3 and -3 respectively.</p>
+<p>The biomarker data in this study comes from a selected sample of 154 youth males aged 18 months to 8 years. All subjects were screened to make sure that they did not have genetic, metabolic, physical, mental, or other neurological disorders. In the sample, 76 were classified as having autism spectrum disorder (ASD) and 78 were classified as typically developing (TD). The average age of the groups was 5.6 years and 5.7 years respectively. Within the ASD group, the 3 ethnicity classifications making up most of the sample are White (33/76), Hispanic/Latino (26/76) and Multiple Ethnicities/Other (9/76). Within the TD group, the 3 biggest ethnicity classifications were White (40/78), African American/Black (14/78) and Multiple Ethnicities/Other (14/78). Within both groups, a majority of subjects did not have any co-morbid conditions. The only co-morbid condition reported that affected a high number of people was seasonal allergies (30/76 in the ASD group and 17/78 in the TD group). All other co-morbid conditions affected no more than 2 people within each group. Lastly, a vast majority of subjects did not report taking psychiatric medications. All other psychiatric medications observed were taken by no more than 2 people.</p>
+<p>The data was obtained by performing a fasting blood draw in the morning on the healthy subjects. The blood was then processed and analyzed through a Somascan™ assay to get information on the protein levels. The study obtained the levels of 1317 proteins from each of the 154 subjects, of which 192 proteins did not pass the study’s quality control. For our work, all proteins were included. The data was preprocessed by applying a log10 transformation and then normalizing the data with a z-transformation. Furthermore, outliers with z-scores that were greater than 3 or less than -3 were clipped to 3 and -3 respectively.</p>
 </section>
 <section id="summary-of-published-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="summary-of-published-analysis">Summary of published analysis</h2>
@@ -114,13 +114,13 @@ ul.task-list li input[type="checkbox"] {
 <p></p><figure class="figure"><p></p>
 <div>
 <pre class="mermaid mermaid-js">flowchart LR
-  A(154 participants) --&gt; B(1317 protein measurements from participants)
+  A(154 subjects) --&gt; B(1317 protein measurements from subjects)
   B --&gt; C(Random Forests for top 10 significant proteins) 
   B --&gt; D(T-tests for top 10 significant proteins)
   B --&gt; E(Correlation calculations for top 10 significant proteins)
-  C &amp; D &amp; E --&gt; F(Base logistic regression Model with proteins in hard intersection)
+  C &amp; D &amp; E --&gt; F(Base logistic regression model with proteins in hard intersection)
   F --&gt; G(Add other significant proteins 1 by 1 to the model if they increase accuracy)
-  G --&gt; H[9 proteins identified as the best panel]
+  G --&gt; H(9 proteins identified as the best panel)
 </pre>
 </div>
 <p></p></figure><p></p>
@@ -130,7 +130,6 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="findings" class="level2">
 <h2 class="anchored" data-anchor-id="findings">Findings</h2>
-<p>Summarize your findings here. I’ve included some subheaders in a way that seems natural to me; you can structure this section however you like.</p>
 <section id="impact-of-preprocessing-and-outliers" class="level3">
 <h3 class="anchored" data-anchor-id="impact-of-preprocessing-and-outliers">Impact of preprocessing and outliers</h3>
 <p>A couple of important choices were made in the data preprocessing. These were: (1) log-transforming the data, and (2) trimming outliers. These transformations were performed because the several of the distributions of protein levels had very large outliers which would have skewed the analysis. We investigated the distribution of protein levels for 5 proteins (PBEF, Carbonic anhydrase III, FGF-8B, TRAIL R1, and CNTN2) and observed a noticeable right skew in all of them. Below is a distribution of 1 of proteins observed.</p>
@@ -144,7 +143,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>Because of the skew of the raw protein levels, a log-transform would help transform the data to be more symmetric for the tests completed.</p>
-<p>We also investigated the data before trimming outliers. Despite nearly every participant having some number of proteins with outlier levels (&gt;3 standard deviations from the mean), only 8 have more than 80 outliers, while the rest have under 50.</p>
+<p>We also investigated the data before trimming outliers. Despite nearly every subject having some number of proteins with outlier levels (&gt;3 standard deviations from the mean), only 8 have more than 80 outliers, while the rest have under 50.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -183,11 +182,123 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="methodological-variations" class="level3">
 <h3 class="anchored" data-anchor-id="methodological-variations">Methodological variations</h3>
-<p>Task 3</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Test-set performance under each modification.</caption>
+<colgroup>
+<col style="width: 34%">
+<col style="width: 17%">
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Analysis</th>
+<th style="text-align: left;">Train/test split</th>
+<th style="text-align: right;">Proteins</th>
+<th style="text-align: right;">Sensitivity</th>
+<th style="text-align: right;">Specificity</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">AUROC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">In-class (selection on full data)</td>
+<td style="text-align: left;">80/20</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.812</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">0.774</td>
+<td style="text-align: right;">0.883</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Selection on training set only</td>
+<td style="text-align: left;">80/20</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.688</td>
+<td style="text-align: right;">0.625</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.789</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Training only + top 15 + union</td>
+<td style="text-align: left;">75/25</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.579</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.615</td>
+<td style="text-align: right;">0.742</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Selection on a training partition.</strong> In the in-class analysis, the t-tests and random forest were run on the full dataset before the data was split. The test subjects therefore helped choose the proteins they were later used to evaluate. When we set aside 20% of the data first and ran every selection step on the training set only, the hard intersection gave a 6-protein panel (DERM, IgD, PTN, RELT, MAPK14, MAPK2). Test AUROC fell from 0.883 to 0.789, and accuracy fell from 0.774 to 0.656. This drop suggests the in-class results are optimistic because of data leakage. The training-only figures are a more honest estimate of how the panel would perform on new subjects.</p>
+<p><strong>Larger panels and a fuzzy intersection.</strong> We then took the top 15 proteins from each method instead of the top 10. We also replaced the hard intersection with a union, keeping any protein selected by <em>either</em> method, which gave a panel of [n] proteins. Selection was again done on a training partition (75/25, stratified by group). Performance dropped further: AUROC was 0.742, accuracy 0.615, sensitivity 0.579 and specificity 0.650. These two changes were applied together, so we cannot fully separate their effects. Both, however, push in the same direction: they add lower-ranked proteins that carry weaker signal. With roughly 115 training subjects, a logistic regression on this many predictors likely overfits the training data rather than gaining predictive power. Being more selective, not less, appears to work better for this dataset.</p>
+<p>These comparisons rely on a single test set each, of 31–39 subjects, so one misclassified subject shifts accuracy by about 0.03. The analyses also used different random splits. The direction of the changes is more reliable than their exact size.</p>
 </section>
 <section id="improved-classifier" class="level3">
 <h3 class="anchored" data-anchor-id="improved-classifier">Improved classifier</h3>
-<p>Task 4</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Alternative panels benchmarked against the in-class method on the same test set.</caption>
+<colgroup>
+<col style="width: 39%">
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Panel</th>
+<th style="text-align: right;">Proteins</th>
+<th style="text-align: right;">Sensitivity</th>
+<th style="text-align: right;">Specificity</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">AUROC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">In-class method (training only)</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.688</td>
+<td style="text-align: right;">0.625</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.789</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Simpler panel (DERM, RELT, IgD)</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.812</td>
+<td style="text-align: right;">0.562</td>
+<td style="text-align: right;">0.688</td>
+<td style="text-align: right;">0.766</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LASSO</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">0.688</td>
+<td style="text-align: right;">0.625</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.797</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>We benchmarked two alternatives against the in-class method. All three panels were selected using only the training data and evaluated on the same held-out test set.</p>
+<p><strong>Simpler panel.</strong> We ranked the 6 baseline proteins by t-test p-value and fit logistic regressions using the top 1 through 6 proteins. To avoid using the test set to choose the panel size, we chose it by 5-fold cross-validation on the training data. We picked the smallest panel whose cross-validated AUROC was within 0.05 of the best. This gave a 3-protein panel: DERM, RELT and IgD. On the test set it reached an AUROC of 0.766 and accuracy of 0.688, compared with 0.789 and 0.656 for the full 6-protein panel. Halving the panel therefore gives comparable performance, with slightly higher accuracy and sensitivity and slightly lower AUROC and specificity. A smaller panel would be cheaper to measure and easier to validate clinically.</p>
+<p><strong>LASSO panel.</strong> We also fit a LASSO logistic regression on all proteins, choosing the penalty by 10-fold cross-validation on the training data (λ.1se). LASSO selected 24 proteins, including 5 of the 6 baseline proteins (all except RELT). Its test AUROC was 0.797, and its sensitivity, specificity and accuracy matched the baseline. LASSO therefore did not meaningfully improve on the in-class panel and used four times as many proteins.</p>
+<p>Overall, the simpler 3-protein panel is the most practical result: it performs about as well as the in-class panel with half the proteins. DERM and IgD also appear in the published core panel. As in the previous section, the differences between panels are within what one test set of 32 subjects can resolve. Repeated splits or nested cross-validation would be needed to say any panel is truly better.</p>
 </section>
 </section>
 
